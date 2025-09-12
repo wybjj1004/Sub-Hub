@@ -3688,17 +3688,20 @@ function convertToYaml(obj, indent = 0) {
     } else if (typeof value === 'number') {
       yaml += `${spaces}${yamlKey}: ${value}\n`;
     } else if (typeof value === 'string') {
-      // 对字符串值更宽松的引号判断，主要针对真正会导致 YAML 解析问题的字符
-      const needsQuotes = value.includes(':') || value.includes('#') || 
-                         value.includes('"') || value.includes('\n') ||
-                         value.includes('&') || value.includes('*') ||
-                         value.includes('[') || value.includes(']') ||
-                         value.includes('{') || value.includes('}') ||
-                         value.includes('@') || value.includes('`') ||
-                         /^\s/.test(value) || /\s$/.test(value) || 
-                         value === '' || /^(true|false|null|yes|no|on|off)$/i.test(value) ||
-                         (/^\d+$/.test(value) && value.length > 1) || 
-                         (/^\d+\.\d+$/.test(value) && value.length > 1);
+      // 在 YAML 中，只有很少的情况需要引号：
+      // 1. 空字符串
+      // 2. 以空格开始或结束的字符串
+      // 3. 可能被解析为布尔值的字符串
+      // 4. 可能被解析为数字的字符串
+      // 5. 包含换行符的字符串
+      // 6. 包含双引号的字符串（需要转义）
+      const needsQuotes = value === '' ||
+                         /^\s/.test(value) || /\s$/.test(value) ||
+                         /^(true|false|null|yes|no|on|off)$/i.test(value) ||
+                         /^[+-]?\d+$/.test(value) ||
+                         /^[+-]?\d*\.\d+$/.test(value) ||
+                         value.includes('\n') ||
+                         value.includes('"');
       
       if (needsQuotes) {
         const escapedValue = value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
